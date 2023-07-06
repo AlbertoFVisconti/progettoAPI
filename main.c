@@ -92,7 +92,7 @@ void  demolisci_stazione(){
     scanf("%d",&dist);
     //controlla se ci sono stazioni
     if(inizio==NULL) {
-        printf("non demolita");
+        printf("%s","non demolita");
         return;
     }
     else{
@@ -109,7 +109,7 @@ void  demolisci_stazione(){
                 temp=temp->next;
             }
             if(temp==NULL|| temp->distanza!=dist){
-                printf("non demolita");
+                printf("%s","non demolita");
                 return;
             }
             prec->next=temp->next;
@@ -124,9 +124,34 @@ void  demolisci_stazione(){
             free(tempAuto);
         }
         free(temp);
-        printf("demolita");
+        printf("%s","demolita");
     }
 
+}
+
+void aggiungi_auto(){
+    int dist,autonomia;
+    struct Stazione *temp=inizio;
+    printf("distanza stazione e autonomia auto");
+    scanf("%d %d",&dist,&autonomia);
+    while(temp!=NULL && temp->distanza<dist)
+        temp=temp->next;
+
+    if(temp==NULL || temp->distanza!=dist){
+        printf("%s","non aggiunta");
+        return;
+    }
+    struct Auto *tempAuto= malloc(sizeof(struct Auto));
+    tempAuto->autonomia=autonomia;
+    if(temp->maggiore==NULL || temp->maggiore->autonomia<autonomia){
+        tempAuto->next=temp->maggiore;
+        temp->maggiore=tempAuto;
+    }
+    else{
+        tempAuto->next=temp->maggiore->next;
+        temp->maggiore->next=tempAuto;
+    }
+    printf("%s","aggiunta");
 }
 
 void stampa_auto(struct Auto *automobile){
@@ -152,9 +177,7 @@ void stampa_stazioni(struct Stazione *stazione){
 int main() {
     aggiungi_stazione();
     stampa_stazioni(inizio);
-    aggiungi_stazione();
-    stampa_stazioni(inizio);
-    demolisci_stazione();
+    aggiungi_auto();
     stampa_stazioni(inizio);
 
 
