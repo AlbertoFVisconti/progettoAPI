@@ -176,12 +176,12 @@ void rottama_auto() {
     struct Auto *succ = temp->maggiore;
     struct Auto *prec= temp->maggiore;
     struct Auto *newMaggiore=temp->maggiore->next;
-    struct Auto *precnewMaggiore;
+    struct Auto *precnewMaggiore=NULL;
 
     while (succ != NULL){
         if(succ->autonomia==autonomia){
             contoDistrutte++;
-            if(succ=temp->maggiore){
+            if(succ==temp->maggiore){
                 prec=succ->next;
                 temp->maggiore=prec;
                 free(succ);
@@ -191,7 +191,8 @@ void rottama_auto() {
             }
             prec->next=succ->next;
             free(succ);
-            succ=prec;
+            succ=prec->next;
+            continue;
 
         }
         else if (daAggiustare && nuovoMax<succ->autonomia ){
@@ -207,7 +208,7 @@ void rottama_auto() {
     if(contoDistrutte==0)
         printf("%s","non rottamata");
     else {
-        if(daAggiustare){
+        if(daAggiustare && newMaggiore!=NULL){
             precnewMaggiore->next=newMaggiore->next;
             newMaggiore->next=temp->maggiore;
             temp->maggiore=newMaggiore;
