@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
+
 struct Auto{
     int autonomia;
     struct Auto *next;
@@ -153,7 +155,70 @@ void aggiungi_auto(){
     }
     printf("%s","aggiunta");
 }
+// tempo di completamento è t(n +m)
+void rottama_auto() {
+    //solita roba per trovare la stazione (se esiste)
+    int dist, autonomia;
+    struct Stazione *temp = inizio;
+    printf("distanza stazione e autonomia auto");
+    scanf("%d %d", &dist, &autonomia);
+    while (temp != NULL && temp->distanza < dist)
+        temp = temp->next;
 
+    if (temp == NULL || temp->distanza != dist) {
+        printf("%s", "non rottamata");
+        return;
+    }
+    //ora guardo se le/la auto esiste/esistono
+    int contoDistrutte=0;
+    int nuovoMax=-1;
+    bool daAggiustare=false;
+    struct Auto *succ = temp->maggiore;
+    struct Auto *prec= temp->maggiore;
+    struct Auto *newMaggiore=temp->maggiore->next;
+    struct Auto *precnewMaggiore;
+
+    while (succ != NULL){
+        if(succ->autonomia==autonomia){
+            contoDistrutte++;
+            if(succ=temp->maggiore){
+                prec=succ->next;
+                temp->maggiore=prec;
+                free(succ);
+                succ=prec;
+                daAggiustare = true;
+                continue;
+            }
+            prec->next=succ->next;
+            free(succ);
+            succ=prec;
+
+        }
+        else if (daAggiustare && nuovoMax<succ->autonomia ){
+            precnewMaggiore=prec;
+            newMaggiore=succ;
+            nuovoMax=succ->autonomia;
+        }
+        prec=succ;
+        succ = succ->next;
+
+    }
+
+    if(contoDistrutte==0)
+        printf("%s","non rottamata");
+    else {
+        if(daAggiustare){
+            precnewMaggiore->next=newMaggiore->next;
+            newMaggiore->next=temp->maggiore;
+            temp->maggiore=newMaggiore;
+        }
+        printf("%s","rottamata");
+
+    }
+
+
+
+}
 void stampa_auto(struct Auto *automobile){
     while(automobile!=NULL){
         printf("%d ",automobile->autonomia);
@@ -177,7 +242,7 @@ void stampa_stazioni(struct Stazione *stazione){
 int main() {
     aggiungi_stazione();
     stampa_stazioni(inizio);
-    aggiungi_auto();
+    rottama_auto();
     stampa_stazioni(inizio);
 
 
