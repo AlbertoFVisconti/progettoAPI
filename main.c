@@ -12,7 +12,58 @@ struct Stazione{
     struct Auto *maggiore;
     struct Stazione *next;
 };
-struct Stazione *inizio;
+struct Stazione *inizio=NULL;
+struct Stazione *minima;
+bool inversione;
+struct Auto *soluzione=NULL;
+struct Auto *ultimo=NULL;
+void risposta(int x){
+    struct Auto *temp= malloc(sizeof (struct Auto));
+    temp->autonomia=x;
+    if(!inversione){
+        temp->next=soluzione;
+        soluzione=temp;
+    }
+    else{
+        temp->next=NULL;
+        if(soluzione==NULL){
+            soluzione=temp;
+            ultimo=temp;
+        }
+        else{
+            ultimo->next=temp;
+            ultimo=temp;
+        }
+    }
+}
+//controllo già preventivamente se inizio e fine esistono(quindi ipotizzo esistano di sicuro)
+bool trova_percorso(struct Stazione *curr,struct Stazione *finish){
+    if(curr->maggiore==NULL)
+        curr->maggiore->autonomia=0;
+    int max_reach=(curr->distanza+curr->maggiore->autonomia);
+    if(max_reach>=finish->distanza){
+        risposta(finish->distanza);
+        risposta(curr->distanza);
+        return true;
+    }
+    if(max_reach>minima->distanza){
+        struct Stazione *temp=curr;
+        struct Stazione *old_minima=minima->next;
+        while(temp->next->distanza<=max_reach)
+            temp=temp->next;
+        minima=temp;
+        while(old_minima->distanza<=minima->distanza){
+            if(trova_percorso(old_minima,finish)){
+                risposta(curr->distanza);
+                return true;
+            }
+            old_minima=old_minima->next;
+        }
+    }
+    return false;
+
+
+}
 
 void aggiungi_stazione(){
     int x;
@@ -223,7 +274,9 @@ void rottama_auto() {
 void stampa_auto(struct Auto *automobile){
     while(automobile!=NULL){
         printf("%d ",automobile->autonomia);
+        struct Auto *temp=automobile;
         automobile=automobile->next;
+        free(temp);
     }
     printf("\n");
 }
@@ -241,11 +294,43 @@ void stampa_stazioni(struct Stazione *stazione){
 
 
 int main() {
-    aggiungi_stazione();
-    stampa_stazioni(inizio);
-    rottama_auto();
-    stampa_stazioni(inizio);
 
+    int stazioneInizio,stazioneFine;
+    printf("%s","inserire le 2 stazioni");
+    scanf("%d%d", &stazioneInizio, &stazioneFine);
+    inversione = stazioneInizio >= stazioneFine;
+    if(stazioneInizio==stazioneFine){
+        printf("%d",stazioneInizio);
+        goto exit;
+    }
+
+    struct Stazione *temp=inizio;
+    struct Stazione *start=NULL,*finish=NULL;
+    while(temp!=NULL){
+        if(temp->distanza == stazioneInizio)
+            start=temp;
+        if(temp->distanza==stazioneFine)
+            finish=temp;
+        temp=temp->next;
+    }
+    if(start==NULL|| finish==NULL)
+    {
+        printf("%s","nessun percorso");
+        goto exit;
+    }
+
+
+    if(!inversione){
+        minima=start;
+        trova_percorso(start,finish);
+    }
+
+    else{
+        minima=finish;
+        trova_percorso(finish,start);
+    }
+    stampa_auto(soluzione);
+    exit:
 
 
 
