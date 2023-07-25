@@ -63,29 +63,33 @@ struct Stazione* pianifica_percorso(struct Stazione *curr, int finish){
     return NULL;
 }
 struct Stazione* pianifica_percorso_inverso( struct Stazione *curr,int finish) {
-    struct Stazione *old_max=NULL;
-    while (curr->distanza>=massima->distanza&&curr!=old_max) {
-        int autonomia = (curr->maggiore == NULL) ? 0 : curr->maggiore->autonomia;
-        int max_reach = (curr->distanza - autonomia);
-        if (max_reach < massima->distanza) {
-            old_max=massima;
-            struct Stazione *temp = massima->prev;
-            if (max_reach <= finish) {
-                while (temp->distanza!=finish)
-                    temp=temp->prev;
-                temp->puntata=curr;
-                return temp;
+    struct Stazione *old_max=curr;
+        while (curr->distanza<=old_max->distanza){
+            int autonomia = (curr->maggiore == NULL) ? 0 : curr->maggiore->autonomia;
+            int max_reach = (curr->distanza - autonomia);
+            if (max_reach < massima->distanza) {
+                old_max=massima;
+                struct Stazione *temp = massima->prev;
+                if (max_reach <= finish) {
+                    while (temp->distanza!=finish)
+                        temp=temp->prev;
+                    temp->puntata=curr;
+                    return temp;
+                }
+                while (temp->distanza >= max_reach){
+                    temp->puntata=curr;
+                    temp = temp->prev;
+                }
+                massima=temp->next;
             }
-            while (temp->distanza >= max_reach){
-                temp->puntata=curr;
-                temp = temp->prev;
-            }
-            massima=temp->next;
-            curr=temp;
+            if (old_max==massima&&curr==old_max)
+                return NULL;
+            else if (curr==old_max)
+                curr=massima->prev;
+            curr=curr->next;
+
         }
-        curr=curr->next;
-    }
-    return NULL;
+
 }
 
 
