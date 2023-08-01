@@ -346,6 +346,7 @@ int main() {
     char comando[18];
     int i=0;
     char c=getchar();
+    bool invertita;
     while(c!=EOF){
         if(isalpha(c)||c=='-'){
             comando[i]=c;
@@ -381,10 +382,12 @@ int main() {
                 start=temp;
 
                 if(start->distanza<stazioneFine) {
+                    invertita=false;
                     minima = start;
                     temp=pianifica_percorso(start, stazioneFine);
                 }
                 else{
+                    invertita=true;
                     massima=start;
                     temp=pianifica_percorso_inverso(start, stazioneFine);
                 }
@@ -401,11 +404,21 @@ int main() {
                 }
                 //metti a posto i puntatori di puntata quando hai finito
                 exit:
-                temp=start->next;
-                while (temp!=NULL&&temp->puntata!=NULL){
-                    temp->puntata=NULL;
-                    temp=temp->next;
+                if(!invertita){
+                    temp=start->next;
+                    while (temp!=NULL&&temp->puntata!=NULL){
+                        temp->puntata=NULL;
+                        temp=temp->next;
+                    }
                 }
+                else{
+                    temp=start->prev;
+                    while (temp!=NULL&&temp->puntata!=NULL){
+                        temp->puntata=NULL;
+                        temp=temp->next;
+                    }
+                }
+
                 stampa_auto(soluzione);
             }
             else if(comando[9]=='a'){
