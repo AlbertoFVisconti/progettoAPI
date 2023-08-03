@@ -63,34 +63,41 @@ struct Stazione* pianifica_percorso(struct Stazione *curr, int finish){
     return NULL;
 }
 struct Stazione* pianifica_percorso_inverso( struct Stazione *curr,int finish) {
-    struct Stazione *old_max=curr;
-    while (curr->distanza<=old_max->distanza){
-            int autonomia = (curr->maggiore == NULL) ? 0 : curr->maggiore->autonomia;
-            int max_reach = (curr->distanza - autonomia);
-            if (max_reach < massima->distanza) {
-                old_max=massima;
-                struct Stazione *temp = massima->prev;
+    struct Stazione *temp=NULL;
+    struct Stazione *superiore=curr;
+    struct Stazione *inferiore=curr;
+    while(curr->distanza>finish){
+        while(curr!=NULL&&curr->distanza<=superiore->distanza){
+            int autonomia=(curr->maggiore==NULL)? 0: curr->maggiore->autonomia;
+            int max_reach=curr->distanza-autonomia;
+            if(max_reach<=massima->distanza) {
+                temp = curr->prev;
                 if (max_reach <= finish) {
-                    while (temp->distanza!=finish)
-                        temp=temp->prev;
+                    while (temp->distanza != finish) {
+                        temp->puntata = curr;
+                        temp = temp->prev;
+                    }
                     temp->puntata=curr;
                     return temp;
                 }
-                while (temp->distanza >= max_reach){
-                    temp->puntata=curr;
-                    temp = temp->prev;
+                while (temp->distanza>=max_reach){
+                    if(temp->puntata==NULL)
+                        temp->puntata=curr;
+                    massima=temp;
+                    temp=temp->prev;
                 }
-                massima=temp->next;
             }
-            if (old_max==massima&&curr==old_max)
-                return NULL;
-            else if (curr==old_max)
-                curr=massima->prev;
             curr=curr->next;
-
         }
-    return NULL;
+        superiore=inferiore->prev;
+        inferiore=massima;
+        curr=inferiore;
+        if(superiore->distanza<inferiore->distanza)
+            return NULL;
 
+
+    }
+    return NULL;
 }
 
 
@@ -406,16 +413,16 @@ int main() {
                 exit:
                 if(!invertita){
                     temp=start->next;
-                    while (temp!=NULL&&temp->puntata!=NULL){
+                    while (temp!=NULL&&temp->distanza<=stazioneFine){
                         temp->puntata=NULL;
                         temp=temp->next;
                     }
                 }
                 else{
                     temp=start->prev;
-                    while (temp!=NULL&&temp->puntata!=NULL){
+                    while (temp!=NULL&&temp->distanza>=stazioneFine){
                         temp->puntata=NULL;
-                        temp=temp->next;
+                        temp=temp->prev;
                     }
                 }
 
