@@ -204,7 +204,8 @@ void  demolisci_stazione(){
         if(inizio->distanza==dist){
             temp=inizio;
             inizio=inizio->next;
-            inizio->prev=NULL;
+            if(inizio!=NULL)
+                inizio->prev=NULL;
         }
         //scorro lista per trovarlo(se non lo trovo faccio return)
         else{
@@ -218,7 +219,8 @@ void  demolisci_stazione(){
             }
             else{
                 prec->next=temp->next;
-                temp->next->prev=prec;
+                if(temp->next!=NULL)
+                    temp->next->prev=prec;
             }
 
         }
@@ -265,10 +267,9 @@ void aggiungi_auto(){
 // tempo di completamento è t(n +m)
 void rottama_auto() {
     //solita roba per trovare la stazione (se esiste)
-    int dist, autonomia;
     struct Stazione *temp = inizio;
-    dist=leggi_numero();
-    autonomia=leggi_numero();
+    int dist=leggi_numero();
+    int autonomia=leggi_numero();
     while (temp != NULL && temp->distanza < dist)
         temp = temp->next;
 
@@ -282,7 +283,7 @@ void rottama_auto() {
     bool daAggiustare=false;
     struct Auto *succ = temp->maggiore;
     struct Auto *prec= temp->maggiore;
-    struct Auto *newMaggiore=temp->maggiore->next;
+    struct Auto *newMaggiore=NULL;
     struct Auto *precnewMaggiore=NULL;
 
     while (succ != NULL){
@@ -316,7 +317,8 @@ void rottama_auto() {
         printf("%s","non rottamata\n");
     else {
         if(daAggiustare && newMaggiore!=NULL){
-            precnewMaggiore->next=newMaggiore->next;
+            if(precnewMaggiore!=NULL)
+                precnewMaggiore->next=newMaggiore->next;
             newMaggiore->next=temp->maggiore;
             temp->maggiore=newMaggiore;
         }
@@ -353,7 +355,7 @@ int main() {
     char comando[18];
     int i=0;
     char c=getchar();
-    bool invertita;
+    bool invertita=true;
     while(c!=EOF){
         if(isalpha(c)||c=='-'){
             comando[i]=c;
