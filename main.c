@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <ctype.h>
-#define getchar_unlocked() getchar()
+//#define getchar_unlocked() getchar()
 
 struct Auto{
     int autonomia;
@@ -344,7 +344,7 @@ void stampa_auto(struct Auto *automobile){
 
 
 int main() {
-    freopen("output.txt", "w", stdout);
+    //freopen("output.txt", "w", stdout);
     char comando[18];
     int i=0;
     char c=getchar_unlocked();
