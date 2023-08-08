@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <ctype.h>
+#define getchar_unlocked() getchar()
 
 struct Auto{
     int autonomia;
@@ -31,17 +32,17 @@ void risposta(int x){
 int leggi_numero(){
     char c;
     int x=0;
-    c=getchar();
+    c=getchar_unlocked();
     while(isdigit(c)){
         x=x*10;
         x+=c-'0';
-        c=getchar();
+        c=getchar_unlocked();
     }
     return x;
 }
 //controllo già preventivamente se inizio e fine esistono(quindi ipotizzo esistano di sicuro)
 struct Stazione* pianifica_percorso(struct Stazione *curr, int finish){
-    while (curr->distanza<=minima->distanza) {
+    while (curr!=NULL&&curr->distanza<=minima->distanza) {
         int autonomia = (curr->maggiore == NULL) ? 0 : curr->maggiore->autonomia;
         int max_reach = (curr->distanza + autonomia);
         if (max_reach > minima->distanza) {
@@ -67,7 +68,7 @@ struct Stazione* pianifica_percorso_inverso( struct Stazione *curr,int finish) {
     struct Stazione *superiore=curr;
     struct Stazione *inferiore=curr;
     while(curr->distanza>finish){
-        while(curr!=NULL&&curr->distanza<=superiore->distanza){
+        while(curr!=NULL&&superiore!=NULL&&curr->distanza<=superiore->distanza){
             int autonomia=(curr->maggiore==NULL)? 0: curr->maggiore->autonomia;
             int max_reach=curr->distanza-autonomia;
             if(max_reach<=massima->distanza) {
@@ -80,7 +81,7 @@ struct Stazione* pianifica_percorso_inverso( struct Stazione *curr,int finish) {
                     temp->puntata=curr;
                     return temp;
                 }
-                while (temp->distanza>=max_reach){
+                while (temp!=NULL&&temp->distanza>=max_reach){
                     if(temp->puntata==NULL)
                         temp->puntata=curr;
                     massima=temp;
@@ -89,10 +90,11 @@ struct Stazione* pianifica_percorso_inverso( struct Stazione *curr,int finish) {
             }
             curr=curr->next;
         }
-        superiore=inferiore->prev;
+        if(inferiore!=NULL)
+            superiore=inferiore->prev;
         inferiore=massima;
         curr=inferiore;
-        if(superiore->distanza<inferiore->distanza)
+        if(superiore!=NULL&&inferiore!=NULL&&superiore->distanza<inferiore->distanza)
             return NULL;
 
 
@@ -103,9 +105,8 @@ struct Stazione* pianifica_percorso_inverso( struct Stazione *curr,int finish) {
 
 void aggiungi_stazione(){
     int x;
-    int dist;
     int autonomia;
-    dist=leggi_numero();
+    int dist=leggi_numero();
     //crea una stazione nel punto corretto della lista
     struct Stazione *temp= malloc(sizeof(struct Stazione));
     temp->maggiore=NULL;
@@ -117,8 +118,6 @@ void aggiungi_stazione(){
     //se e la prima stazione da inserire
     if(inizio==NULL){
         inizio=temp;
-        temp->next=NULL;
-        temp->prev=NULL;
         printf("%s","aggiunta\n");
     }
     else{
@@ -141,14 +140,15 @@ void aggiungi_stazione(){
             if (succ != NULL && succ->distanza == dist){
                 printf("%s","non aggiunta\n");
                 free(temp);
-                char c=getchar();
+                char c=getchar_unlocked();
                 while (c!='\n')
-                    c=getchar();
+                    c=getchar_unlocked();
                 return;
             }
             else if(succ!=NULL){
                 succ->prev=temp;
-                prev->next = temp;
+                if(prev!=NULL)
+                    prev->next = temp;
                 temp->prev=prev;
                 temp->next = succ;
             } else{
@@ -166,10 +166,10 @@ void aggiungi_stazione(){
         autonomia=leggi_numero();
         //aggiunge le macchine alla stazione(in O(m) e non O(nm)), in testa sarà sempre la più grande
         struct Auto *creaAuto= malloc(sizeof(struct Auto));
+        creaAuto->autonomia=autonomia;
         if(temp->maggiore==NULL){
             temp->maggiore=creaAuto;
             creaAuto->next=NULL;
-            creaAuto->autonomia=autonomia;
         }
         else{
 
@@ -183,17 +183,14 @@ void aggiungi_stazione(){
                 creaAuto->next=temp->maggiore->next;
                 temp->maggiore->next=creaAuto;
             }
-            creaAuto->autonomia=autonomia;
-
         }
     }
 }
 
 void  demolisci_stazione(){
-    int dist;
-    struct Stazione *temp=inizio; //quella che poi andro a distruggere
+    struct Stazione *temp=inizio; //quella che poi andrò a distruggere
     struct Stazione *prec=NULL;
-    dist=leggi_numero();
+    int dist=leggi_numero();
     //controlla se ci sono stazioni
     if(inizio==NULL) {
         printf("%s","non demolita\n");
@@ -202,7 +199,6 @@ void  demolisci_stazione(){
     else{
         //se e la prima devo spostare anche inizio
         if(inizio->distanza==dist){
-            temp=inizio;
             inizio=inizio->next;
             if(inizio!=NULL)
                 inizio->prev=NULL;
@@ -218,7 +214,8 @@ void  demolisci_stazione(){
                 return;
             }
             else{
-                prec->next=temp->next;
+                if(prec!=NULL)
+                    prec->next=temp->next;
                 if(temp->next!=NULL)
                     temp->next->prev=prec;
             }
@@ -240,14 +237,12 @@ void  demolisci_stazione(){
 }
 
 void aggiungi_auto(){
-    int dist,autonomia;
     struct Stazione *temp=inizio;
-    dist=leggi_numero();
-    autonomia=leggi_numero();
+    int dist=leggi_numero();
+    int autonomia=leggi_numero();
     while(temp!=NULL && temp->distanza<dist)
         temp=temp->next;
-
-    if(temp==NULL || temp->distanza!=dist){
+    if(temp==NULL || temp->distanza!=dist|| temp->n_auto>=512){
         printf("%s","non aggiunta\n");
         return;
     }
@@ -282,7 +277,7 @@ void rottama_auto() {
     int nuovoMax=-1;
     bool daAggiustare=false;
     struct Auto *succ = temp->maggiore;
-    struct Auto *prec= temp->maggiore;
+    struct Auto *prec= NULL;
     struct Auto *newMaggiore=NULL;
     struct Auto *precnewMaggiore=NULL;
 
@@ -319,16 +314,14 @@ void rottama_auto() {
         if(daAggiustare && newMaggiore!=NULL){
             if(precnewMaggiore!=NULL)
                 precnewMaggiore->next=newMaggiore->next;
-            newMaggiore->next=temp->maggiore;
+            if(newMaggiore!=precnewMaggiore)
+                newMaggiore->next=temp->maggiore;
             temp->maggiore=newMaggiore;
         }
         printf("%s","rottamata\n");
         temp->n_auto=temp->n_auto-contoDistrutte;
 
     }
-
-
-
 }
 void stampa_auto(struct Auto *automobile){
     while(automobile!=NULL&& automobile->next!=NULL){
@@ -354,8 +347,9 @@ int main() {
     freopen("output.txt", "w", stdout);
     char comando[18];
     int i=0;
-    char c=getchar();
+    char c=getchar_unlocked();
     bool invertita=true;
+
     while(c!=EOF){
         if(isalpha(c)||c=='-'){
             comando[i]=c;
@@ -442,7 +436,7 @@ int main() {
         }
 
 
-        c=getchar();
+        c=getchar_unlocked();
 
     }
 
