@@ -12,8 +12,6 @@ struct Stazione{
     int distanza;
     int n_auto;
     struct Auto *maggiore;
-    struct Stazione *next;
-    struct Stazione *prev;
     struct Stazione *left;
     struct Stazione *right;
     struct Stazione *p;
@@ -60,20 +58,21 @@ struct Stazione* pianifica_percorso(struct Stazione *curr, int finish){
         int autonomia = (curr->maggiore == NULL) ? 0 : curr->maggiore->autonomia;
         int max_reach = (curr->distanza + autonomia);
         if (max_reach > minima->distanza) {
-            struct Stazione *temp = minima->next;
+            struct Stazione *temp = dopo(minima,minima->distanza);
             if (max_reach >= finish) {
-                while (temp->distanza!=finish)
-                    temp=temp->next;
+                while (temp->distanza!=finish){
+                    temp= dopo(temp,temp->distanza);
+                }
                 temp->puntata=curr;
                 return temp;
             }
             while (temp!=NULL&&temp->distanza <= max_reach){
                 temp->puntata=curr;
-                temp = temp->next;
+                temp = dopo(temp,temp->distanza);
             }
-            minima=temp->prev;
+            minima= prima(temp,temp->distanza);
         }
-        curr=curr->next;
+        curr= dopo(curr,curr->distanza);
     }
     return NULL;
 }
@@ -86,11 +85,11 @@ struct Stazione* pianifica_percorso_inverso( struct Stazione *curr,int finish) {
             int autonomia=(curr->maggiore==NULL)? 0: curr->maggiore->autonomia;
             int max_reach=curr->distanza-autonomia;
             if(max_reach<=massima->distanza) {
-                temp = curr->prev;
+                temp = prima(curr,curr->distanza);
                 if (max_reach <= finish) {
-                    while (temp->distanza != finish)
-                        temp = temp->prev;
-
+                    while (temp->distanza != finish){
+                        temp = prima(temp,temp->distanza);
+                    }
                     temp->puntata=curr;
                     return temp;
                 }
@@ -98,13 +97,13 @@ struct Stazione* pianifica_percorso_inverso( struct Stazione *curr,int finish) {
                     if(temp->puntata==NULL)
                         temp->puntata=curr;
                     massima=temp;
-                    temp=temp->prev;
+                    temp= prima(temp,temp->distanza);
                 }
             }
-            curr=curr->next;
+            curr= dopo(curr,curr->distanza);
         }
         if(inferiore!=NULL)
-            superiore=inferiore->prev;
+            superiore= prima(inferiore,inferiore->distanza);
         inferiore=massima;
         curr=inferiore;
         if(superiore!=NULL&&inferiore!=NULL&&superiore->distanza<inferiore->distanza)
@@ -125,13 +124,11 @@ void aggiungi_stazione(){
     temp->distanza=dist;
     temp->n_auto=0;
     temp->puntata=NULL;
-    temp->prev=NULL;
-    temp->next=NULL;
     temp->left=NULL;
     temp->right=NULL;
     temp->p=NULL;
     //se e la prima stazione da inserire
-    if(inizio==NULL){
+    if(inizio_albero==NULL){
         inizio=temp;
         inizio_albero=temp;
         printf("%s","aggiunta\n");
@@ -139,10 +136,8 @@ void aggiungi_stazione(){
     else{
         //se va per primo devo cambiare anche inizio
         if(dist<inizio->distanza){
-            inizio->prev=temp;
             inizio->left=temp;
             temp->p=inizio;
-            temp->next=inizio;
             inizio=temp;
         }
         else {
@@ -162,10 +157,6 @@ void aggiungi_stazione(){
             }
             temp->p=prev;
             prev->distanza < dist ? (prev->right = temp) : (prev->left = temp);
-            temp->next=dopo(temp,dist);
-            if(temp->next!=NULL) temp->next->prev = temp;
-            temp->prev=prima(temp,dist);
-            temp->prev->next=temp;
         }
         printf("%s","aggiunta\n");
     }
@@ -200,29 +191,13 @@ void aggiungi_stazione(){
 }
 
 void  demolisci_stazione() {
-    struct Stazione *succ = inizio; //quella che poi andrò a distruggere
-    struct Stazione *temp = inizio_albero;
+    struct Stazione *succ = inizio_albero; //quella che poi andrò a distruggere
+    struct Stazione *temp = NULL;
     int dist = leggi_numero();
     //controlla se ci sono stazioni
-    if (inizio == NULL) {
+    if (inizio_albero == NULL) {
         printf("%s", "non demolita\n");
         return;
-    }
-    //aggiusto doppia lista(se non esiste faccio return)
-    if (inizio->distanza == dist) {
-        inizio = inizio->next;
-        if (inizio != NULL) inizio->prev = NULL;
-    } else {
-        succ = inizio_albero;
-        while (succ && succ->distanza != dist)
-            succ = (dist < succ->distanza) ? succ->left : succ->right;
-        if (succ == NULL) {
-            printf("%s", "non demolita\n");
-            return;
-        } else {
-            succ->prev->next = succ->next;
-            if (succ->next) succ->next->prev = succ->prev;
-        }
     }
     //aggiusto l'albero
     if (dist == inizio_albero->distanza) {
@@ -235,42 +210,63 @@ void  demolisci_stazione() {
             inizio_albero = sinistra;
         else {
             inizio_albero = destra;
-            temp = destra;
-            while (temp->left)
+            temp=inizio_albero;
+            while (temp->left){
                 temp = temp->left;
-            temp->left = sinistra;
+            }
+             temp->left= sinistra;
             sinistra->p = temp;
         }
+        if(inizio_albero)inizio_albero->p=NULL;
     }
     else {
-            if (succ->distanza < succ->p->distanza) {
-                if (succ->left == NULL)
-                    succ->p->left = succ->right;
-                else if (succ->right == NULL)
-                    succ->p->left = succ->left;
-                else {
-                    succ->p->left = succ->left;
-                    temp = succ->left;
-                    while (temp->right != NULL)
-                        temp = temp->right;
-                    temp->right = succ->right;
-                    succ->right->p = temp;
-                }
-            } else {
-                if (succ->left == NULL)
-                    succ->p->right = succ->right;
-                else if (succ->right == NULL)
-                    succ->p->right = succ->left;
-                else {
-                    succ->p->right = succ->left;
-                    temp = succ->left;
-                    while (temp->right != NULL)
-                        temp = temp->right;
-                    temp->right = succ->right;
-                    temp->right->p = temp;
-                }
-
+        while (succ && succ->distanza != dist)
+            succ = (dist < succ->distanza) ? succ->left : succ->right;
+        if (succ == NULL) {
+            printf("%s", "non demolita\n");
+            return;
+        }
+        if(succ==inizio)
+            inizio= dopo(succ,succ->distanza);
+        if (succ->distanza < succ->p->distanza) {
+            if (succ->left == NULL) {
+                succ->p->left = succ->right;
+                if (succ->right) succ->right->p=succ->p;
             }
+            else if (succ->right == NULL) {
+                succ->p->left = succ->left;
+                succ->left->p=succ->p;
+            }
+            else {
+                succ->p->left = succ->left;
+                succ->left->p=succ->p;
+                temp = succ->left;
+                while (temp->right != NULL)
+                    temp = temp->right;
+                temp->right = succ->right;
+                succ->right->p = temp;
+            }
+        }
+        else{
+            if (succ->left == NULL){
+                succ->p->right = succ->right;
+                if(succ->right) succ->right->p=succ->p;
+            }
+            else if (succ->right == NULL){
+                succ->p->right = succ->left;
+                succ->left->p=succ->p;
+            }
+            else {
+                succ->p->right = succ->left;
+                succ->left->p=succ->p;
+                temp = succ->left;
+                while (temp->right != NULL)
+                    temp = temp->right;
+                temp->right = succ->right;
+                temp->right->p = temp;
+            }
+
+        }
 
     }
     //distruggo auto
@@ -285,13 +281,19 @@ void  demolisci_stazione() {
 }
 
 
-
+struct Stazione *old_aggiunta=NULL;
 void aggiungi_auto(){
     struct Stazione *temp=inizio_albero;
     int dist=leggi_numero();
     int autonomia=leggi_numero();
-    while(temp!=NULL && temp->distanza!=dist)
-        temp=(temp->distanza<dist)?temp->right:temp->left;
+    if(old_aggiunta && old_aggiunta->distanza==dist)
+        temp=old_aggiunta;
+    else{
+        while(temp!=NULL && temp->distanza!=dist)
+            temp=(temp->distanza<dist)?temp->right:temp->left;
+        old_aggiunta=temp;
+    }
+
     if(temp==NULL || temp->n_auto>=512){
         printf("%s","non aggiunta\n");
         return;
@@ -394,7 +396,7 @@ void stampa_auto(struct Auto *automobile){
 
 
 int main() {
-    freopen("output.txt", "w", stdout);
+    //freopen("output.txt", "w", stdout);
     char comando[18];
     int i=0;
     char c=getchar_unlocked();
@@ -457,17 +459,17 @@ int main() {
                 //metti a posto i puntatori di puntata quando hai finito
                 exit:
                 if(!invertita){
-                    temp=start->next;
+                    temp=dopo(start,start->distanza);
                     while (temp!=NULL&&temp->distanza<=stazioneFine){
                         temp->puntata=NULL;
-                        temp=temp->next;
+                        temp= dopo(temp,temp->distanza);
                     }
                 }
                 else{
-                    temp=start->prev;
+                    temp= prima(start,start->distanza);
                     while (temp!=NULL&&temp->distanza>=stazioneFine){
                         temp->puntata=NULL;
-                        temp=temp->prev;
+                        temp= prima(temp,temp->distanza);
                     }
                 }
 
